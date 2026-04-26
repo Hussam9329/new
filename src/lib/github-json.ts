@@ -1,7 +1,7 @@
 // مكتبة للتعامل مع ملف JSON على GitHub
 // البيانات تنحفظ في مستودع GitHub ويتشاركها الكل من أي مكان بالعالم
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || 'SPLIT_TOKEN';
 const GITHUB_REPO = process.env.GITHUB_REPO || 'Hussam9329/new';
 const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
 const GITHUB_DATA_PATH = process.env.GITHUB_DATA_PATH || 'data.json';
