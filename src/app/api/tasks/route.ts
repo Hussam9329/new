@@ -16,13 +16,13 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { text } = body;
+    const { text, date } = body;
 
     if (!text || typeof text !== 'string' || text.trim() === '') {
       return NextResponse.json({ error: 'نص المهمة مطلوب' }, { status: 400 });
     }
 
-    const task = await createTask(text);
+    const task = await createTask(text, date);
     return NextResponse.json(task, { status: 201 });
   } catch (error) {
     console.error('Error creating task:', error);

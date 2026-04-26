@@ -18,6 +18,7 @@ interface Task {
   id: string;
   text: string;
   done: boolean;
+  date: string; // تاريخ المهمة بصيغة YYYY-MM-DD
   createdAt: string;
   updatedAt: string;
 }
@@ -101,13 +102,14 @@ export async function getAllTasks(): Promise<Task[]> {
 }
 
 // إضافة مهمة جديدة
-export async function createTask(text: string): Promise<Task> {
+export async function createTask(text: string, date?: string): Promise<Task> {
   const { data, sha } = await readFileFromGitHub();
 
   const newTask: Task = {
     id: generateId(),
     text: text.trim(),
     done: false,
+    date: date || new Date().toISOString().split('T')[0],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
