@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Trash2, Plus, ListTodo, Lock, LogOut, RefreshCw, Loader2 } from 'lucide-react';
+import { Check, Trash2, Plus, ListTodo, RefreshCw, Loader2 } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -16,13 +16,7 @@ interface Task {
   updatedAt: string;
 }
 
-// الرمز السري — يتم التحقق منه من متغير بيئة الخادم
-const ACCESS_CODE = '1234';
-
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [codeInput, setCodeInput] = useState('');
-  const [codeError, setCodeError] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,11 +24,11 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { toast } = useToast();
 
-  // جلب المهام من الخادم
+  // جلب المهام من الخادم (اللي يقرأ من GitHub)
   const fetchTasks = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const res = await fetch('/api/tasks');
+      const res = await fetch('/api/tasks', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setTasks(data);
@@ -53,25 +47,12 @@ export default function Home() {
     }
   }, [toast]);
 
-  // تحديث تلقائي كل 3 ثواني
+  // تحديث تلقائي كل 5 ثواني
   useEffect(() => {
-    if (!isAuthenticated) return;
-
     fetchTasks();
-    const interval = setInterval(() => fetchTasks(true), 3000);
+    const interval = setInterval(() => fetchTasks(true), 5000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, fetchTasks]);
-
-  // التحقق من الرمز السري
-  const handleLogin = () => {
-    if (codeInput === ACCESS_CODE) {
-      setIsAuthenticated(true);
-      setCodeError('');
-      setCodeInput('');
-    } else {
-      setCodeError('رمز خطأ، حاول مرة ثانية');
-    }
-  };
+  }, [fetchTasks]);
 
   // إضافة مهمة جديدة
   const handleAddTask = async () => {
@@ -91,6 +72,13 @@ export default function Home() {
         toast({
           title: 'تمت الإضافة',
           description: 'المهمة انضافت بنجاح',
+        });
+      } else {
+        const err = await res.json();
+        toast({
+          title: 'خطأ',
+          description: err.error || 'فشل في إضافة المهمة',
+          variant: 'destructive',
         });
       }
     } catch {
@@ -146,61 +134,6 @@ export default function Home() {
     }
   };
 
-  // تسجيل الخروج
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setTasks([]);
-  };
-
-  // ===== صفحة الدخول =====
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-pink-50 p-4">
-        <Card className="w-full max-w-md shadow-2xl border-0 backdrop-blur-sm bg-white/80">
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-              <Lock className="w-8 h-8 text-purple-600" />
-            </div>
-            <CardTitle className="text-2xl font-bold text-gray-800">
-              To-Do List Ultra
-            </CardTitle>
-            <p className="text-gray-500 mt-2 text-sm">
-              ادخل الرمز للوصول إلى قائمة المهام المشتركة
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                type="password"
-                placeholder="اكتب الرمز هنا"
-                value={codeInput}
-                onChange={(e) => {
-                  setCodeInput(e.target.value);
-                  setCodeError('');
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                className="text-center text-lg h-12 rounded-xl border-2 focus:border-purple-500 transition-colors"
-                dir="ltr"
-              />
-              {codeError && (
-                <p className="text-red-500 text-sm text-center font-medium animate-pulse">
-                  {codeError}
-                </p>
-              )}
-            </div>
-            <Button
-              onClick={handleLogin}
-              className="w-full h-12 rounded-xl text-lg font-bold bg-purple-600 hover:bg-purple-700 transition-colors"
-              disabled={!codeInput}
-            >
-              دخول
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // ===== صفحة قائمة المهام =====
   const completedCount = tasks.filter((t) => t.done).length;
   const totalCount = tasks.length;
@@ -225,26 +158,15 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => fetchTasks()}
-                  className="text-gray-400 hover:text-purple-600"
-                  title="تحديث"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleLogout}
-                  className="text-gray-400 hover:text-red-500"
-                  title="تسجيل الخروج"
-                >
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => fetchTasks()}
+                className="text-gray-400 hover:text-purple-600"
+                title="تحديث"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -339,7 +261,7 @@ export default function Home() {
             {/* آخر تحديث */}
             {lastUpdated && (
               <p className="text-center text-xs text-gray-300 mt-4">
-                آخر تحديث: {lastUpdated.toLocaleTimeString('ar-IQ')} — يتم التحديث تلقائياً كل 3 ثواني
+                آخر تحديث: {lastUpdated.toLocaleTimeString('ar-IQ')} — يتم التحديث تلقائياً كل 5 ثواني
               </p>
             )}
           </CardContent>

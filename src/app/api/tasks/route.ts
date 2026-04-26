@@ -1,12 +1,10 @@
-import { db } from '@/lib/db';
+import { getAllTasks, createTask } from '@/lib/github-json';
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/tasks — جلب كل المهام
 export async function GET() {
   try {
-    const tasks = await db.task.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    const tasks = await getAllTasks();
     return NextResponse.json(tasks);
   } catch (error) {
     console.error('Error fetching tasks:', error);
@@ -24,13 +22,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'نص المهمة مطلوب' }, { status: 400 });
     }
 
-    const task = await db.task.create({
-      data: {
-        text: text.trim(),
-        done: false,
-      },
-    });
-
+    const task = await createTask(text);
     return NextResponse.json(task, { status: 201 });
   } catch (error) {
     console.error('Error creating task:', error);

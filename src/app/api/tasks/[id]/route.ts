@@ -1,7 +1,7 @@
-import { db } from '@/lib/db';
+import { updateTask, deleteTask } from '@/lib/github-json';
 import { NextRequest, NextResponse } from 'next/server';
 
-// PUT /api/tasks/[id] — تحديث مهمة (تعليم كمُنجز أو إلغاء)
+// PUT /api/tasks/[id] — تحديث مهمة
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -11,24 +11,17 @@ export async function PUT(
     const body = await request.json();
     const { done, text } = body;
 
-    const existingTask = await db.task.findUnique({ where: { id } });
-    if (!existingTask) {
-      return NextResponse.json({ error: 'المهمة غير موجودة' }, { status: 404 });
-    }
+    const updates: { done?: boolean; text?: string } = {};
+    if (typeof done === 'boolean') updates.done = done;
+    if (typeof text === 'string' && text.trim()) updates.text = text.trim();
 
-    const updateData: { done?: boolean; text?: string } = {};
-    if (typeof done === 'boolean') updateData.done = done;
-    if (typeof text === 'string' && text.trim()) updateData.text = text.trim();
-
-    const task = await db.task.update({
-      where: { id },
-      data: updateData,
-    });
-
+    const task = await updateTask(id, updates);
     return NextResponse.json(task);
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'فشل في تحديث المهمة';
+    const status = message === 'المهمة غير موجودة' ? 404 : 500;
     console.error('Error updating task:', error);
-    return NextResponse.json({ error: 'فشل في تحديث المهمة' }, { status: 500 });
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -39,16 +32,12 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-
-    const existingTask = await db.task.findUnique({ where: { id } });
-    if (!existingTask) {
-      return NextResponse.json({ error: 'المهمة غير موجودة' }, { status: 404 });
-    }
-
-    await db.task.delete({ where: { id } });
+    await deleteTask(id);
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'فشل في حذف المهمة';
+    const status = message === 'المهمة غير موجودة' ? 404 : 500;
     console.error('Error deleting task:', error);
-    return NextResponse.json({ error: 'فشل في حذف المهمة' }, { status: 500 });
+    return NextResponse.json({ error: message }, { status });
   }
 }
