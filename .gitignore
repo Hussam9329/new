@@ -72,5 +72,3 @@ server.log
 # Caddy
 Caddyfile
 
-# bun
-bun.lock
