@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Trash2, Plus, ListTodo, RefreshCw, Loader2, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, Trash2, Plus, Calendar, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -18,24 +17,20 @@ interface Task {
   updatedAt: string;
 }
 
-// الأيام العربية
-const ARABIC_MONTHS = [
+const MONTHS = [
   'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
   'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
 ];
 
-const ARABIC_WEEKDAYS = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+const WEEKDAYS = ['أحد', 'إثن', 'ثلا', 'أرب', 'خمس', 'جمع', 'سبت'];
 
-function formatDate(dateStr: string): string {
+function formatDateAr(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
-  return `${d.getDate()} ${ARABIC_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function toDateString(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+function toDS(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 export default function Home() {
@@ -44,80 +39,50 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [addingTask, setAddingTask] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [calMonth, setCalMonth] = useState<Date>(new Date());
   const { toast } = useToast();
 
-  const selectedDateStr = toDateString(selectedDate);
+  const selStr = toDS(selectedDate);
 
-  // جلب المهام من الخادم
   const fetchTasks = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
       const res = await fetch('/api/tasks', { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        setTasks(data);
-      }
+      if (res.ok) setTasks(await res.json());
     } catch {
-      if (!silent) {
-        toast({
-          title: 'خطأ',
-          description: 'فشل في جلب المهام من الخادم',
-          variant: 'destructive',
-        });
-      }
+      if (!silent) toast({ title: 'خطأ', description: 'فشل في جلب المهام', variant: 'destructive' });
     } finally {
       if (!silent) setLoading(false);
     }
   }, [toast]);
 
-  // تحديث تلقائي كل 5 ثواني
   useEffect(() => {
     fetchTasks();
-    const interval = setInterval(() => fetchTasks(true), 5000);
-    return () => clearInterval(interval);
+    const iv = setInterval(() => fetchTasks(true), 5000);
+    return () => clearInterval(iv);
   }, [fetchTasks]);
 
-  // إضافة مهمة جديدة
-  const handleAddTask = async () => {
+  const handleAdd = async () => {
     if (!newTask.trim()) return;
-
     setAddingTask(true);
     try {
       const res = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: newTask.trim(), date: selectedDateStr }),
+        body: JSON.stringify({ text: newTask.trim(), date: selStr }),
       });
-
       if (res.ok) {
         setNewTask('');
         await fetchTasks(true);
-        toast({
-          title: 'تمت الإضافة',
-          description: `المهمة انضافت ليوم ${formatDate(selectedDateStr)}`,
-        });
-      } else {
-        const err = await res.json();
-        toast({
-          title: 'خطأ',
-          description: err.error || 'فشل في إضافة المهمة',
-          variant: 'destructive',
-        });
       }
     } catch {
-      toast({
-        title: 'خطأ',
-        description: 'فشل في إضافة المهمة',
-        variant: 'destructive',
-      });
+      toast({ title: 'خطأ', description: 'فشل في إضافة المهمة', variant: 'destructive' });
     } finally {
       setAddingTask(false);
     }
   };
 
-  // تبديل حالة المهمة
-  const handleToggleTask = async (task: Task) => {
+  const handleToggle = async (task: Task) => {
     try {
       const res = await fetch(`/api/tasks/${task.id}`, {
         method: 'PUT',
@@ -125,309 +90,293 @@ export default function Home() {
         body: JSON.stringify({ done: !task.done }),
       });
       if (res.ok) await fetchTasks(true);
-    } catch {
-      toast({
-        title: 'خطأ',
-        description: 'فشل في تحديث المهمة',
-        variant: 'destructive',
-      });
-    }
+    } catch { /* silent */ }
   };
 
-  // حذف مهمة
-  const handleDeleteTask = async (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
       const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        await fetchTasks(true);
-        toast({
-          title: 'تم الحذف',
-          description: 'المهمة انحذفت بنجاح',
-        });
-      }
-    } catch {
-      toast({
-        title: 'خطأ',
-        description: 'فشل في حذف المهمة',
-        variant: 'destructive',
-      });
-    }
+      if (res.ok) await fetchTasks(true);
+    } catch { /* silent */ }
   };
 
   // مهام اليوم المحدد
-  const tasksForSelectedDate = tasks.filter((t) => t.date === selectedDateStr);
-  const completedCount = tasksForSelectedDate.filter((t) => t.done).length;
-  const totalCount = tasksForSelectedDate.length;
+  const dayTasks = tasks.filter((t) => t.date === selStr);
+  const doneCount = dayTasks.filter((t) => t.done).length;
+  const taskDates = new Set(tasks.map((t) => t.date));
+  const todayStr = toDS(new Date());
 
-  // أيام فيها مهام (للتقويم)
-  const datesWithTasks = new Set(tasks.map((t) => t.date));
+  // بناء التقويم
+  const yr = calMonth.getFullYear();
+  const mo = calMonth.getMonth();
+  const firstDow = new Date(yr, mo, 1).getDay();
+  const dim = new Date(yr, mo + 1, 0).getDate();
+  const prevDim = new Date(yr, mo, 0).getDate();
 
-  // التنقل بين الأشهر
-  const goToPrevMonth = () => {
-    setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-  };
-  const goToNextMonth = () => {
-    setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-  };
-  const goToToday = () => {
-    setSelectedDate(new Date());
-    setCalendarMonth(new Date());
-  };
-
-  // بناء أيام الشهر يدوياً
-  const year = calendarMonth.getFullYear();
-  const month = calendarMonth.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysInPrevMonth = new Date(year, month, 0).getDate();
-  const todayStr = toDateString(new Date());
-
-  const calendarDays: { day: number; dateStr: string; isCurrentMonth: boolean }[] = [];
-  // أيام الشهر السابق
-  for (let i = firstDay - 1; i >= 0; i--) {
-    const d = daysInPrevMonth - i;
-    const prevMonth = month === 0 ? 11 : month - 1;
-    const prevYear = month === 0 ? year - 1 : year;
-    calendarDays.push({
-      day: d,
-      dateStr: toDateString(new Date(prevYear, prevMonth, d)),
-      isCurrentMonth: false,
-    });
+  const cells: { d: number; ds: string; cur: boolean }[] = [];
+  for (let i = firstDow - 1; i >= 0; i--) {
+    const pm = mo === 0 ? 11 : mo - 1;
+    const py = mo === 0 ? yr - 1 : yr;
+    cells.push({ d: prevDim - i, ds: toDS(new Date(py, pm, prevDim - i)), cur: false });
   }
-  // أيام الشهر الحالي
-  for (let d = 1; d <= daysInMonth; d++) {
-    calendarDays.push({
-      day: d,
-      dateStr: toDateString(new Date(year, month, d)),
-      isCurrentMonth: true,
-    });
+  for (let d = 1; d <= dim; d++) {
+    cells.push({ d, ds: toDS(new Date(yr, mo, d)), cur: true });
   }
-  // أيام الشهر التالي
-  const remaining = 42 - calendarDays.length;
-  for (let d = 1; d <= remaining; d++) {
-    const nextMonth = month === 11 ? 0 : month + 1;
-    const nextYear = month === 11 ? year + 1 : year;
-    calendarDays.push({
-      day: d,
-      dateStr: toDateString(new Date(nextYear, nextMonth, d)),
-      isCurrentMonth: false,
-    });
+  const rem = 42 - cells.length;
+  for (let d = 1; d <= rem; d++) {
+    const nm = mo === 11 ? 0 : mo + 1;
+    const ny = mo === 11 ? yr + 1 : yr;
+    cells.push({ d, ds: toDS(new Date(ny, nm, d)), cur: false });
   }
+
+  const isToday = (ds: string) => ds === todayStr;
+  const isSel = (ds: string) => ds === selStr;
+  const hasTasks = (ds: string) => taskDates.has(ds);
+  const allDone = (ds: string) => {
+    const dt = tasks.filter((t) => t.date === ds);
+    return dt.length > 0 && dt.every((t) => t.done);
+  };
+  const hasPending = (ds: string) => {
+    const dt = tasks.filter((t) => t.date === ds);
+    return dt.some((t) => !t.done);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 p-4 pb-8">
-      <div className="max-w-lg mx-auto space-y-4">
-        {/* الهيدر */}
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <ListTodo className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-800">قائمة المهام</h1>
-                  <p className="text-xs text-gray-500">
-                    {totalCount > 0
-                      ? `${completedCount} من ${totalCount} مُنجزة`
-                      : formatDate(selectedDateStr)}
-                  </p>
-                </div>
+    <div className="min-h-screen bg-stone-50 p-4 pb-10">
+      <div className="max-w-md mx-auto space-y-5">
+
+        {/* ═══ الهيدر ═══ */}
+        <div className="pt-4 pb-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-light tracking-tight text-stone-800">
+                مهامي
+              </h1>
+              <p className="text-xs text-stone-400 mt-0.5 font-light">
+                {selStr === todayStr
+                  ? dayTasks.length > 0
+                    ? `${doneCount} من ${dayTasks.length} مُنجزة`
+                    : 'ابدأ يومك بمهمة جديدة'
+                  : formatDateAr(selStr)}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setSelectedDate(new Date()); setCalMonth(new Date()); }}
+              className="text-stone-400 hover:text-stone-600 text-xs h-8 px-3 rounded-lg font-light"
+            >
+              اليوم
+            </Button>
+          </div>
+        </div>
+
+        {/* ═══ التقويم ═══ */}
+        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-5">
+          {/* رأس التقويم */}
+          <div className="flex items-center justify-between mb-5">
+            <button
+              onClick={() => setCalMonth((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-stone-600 hover:bg-stone-50 transition-all"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <div className="text-center">
+              <span className="text-sm font-medium text-stone-700 tracking-wide">
+                {MONTHS[mo]}
+              </span>
+              <span className="text-sm text-stone-400 mr-1.5 font-light">
+                {yr}
+              </span>
+            </div>
+            <button
+              onClick={() => setCalMonth((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1))}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-stone-600 hover:bg-stone-50 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* أسماء الأيام */}
+          <div className="grid grid-cols-7 mb-2">
+            {WEEKDAYS.map((w) => (
+              <div key={w} className="text-center text-[10px] text-stone-300 font-medium tracking-wider py-1.5 uppercase">
+                {w}
               </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={goToToday}
-                  className="text-purple-600 hover:text-purple-700 text-xs h-8 px-2"
+            ))}
+          </div>
+
+          {/* أيام الشهر */}
+          <div className="grid grid-cols-7 gap-y-1">
+            {cells.map((c, i) => {
+              const sel = isSel(c.ds);
+              const tod = isToday(c.ds);
+              const ht = hasTasks(c.ds);
+              const ad = allDone(c.ds);
+              const hp = hasPending(c.ds);
+
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setSelectedDate(new Date(c.ds + 'T00:00:00'));
+                    if (!c.cur) setCalMonth(new Date(c.ds + 'T00:00:00'));
+                  }}
+                  className={`
+                    relative flex flex-col items-center justify-center h-10 rounded-xl text-[13px] transition-all duration-300 ease-out
+                    ${!c.cur ? 'text-stone-200' : 'text-stone-600'}
+                    ${sel ? 'bg-stone-800 text-white shadow-md shadow-stone-200 font-medium' : ''}
+                    ${tod && !sel ? 'text-stone-900 font-semibold' : ''}
+                    ${!sel && c.cur ? 'hover:bg-stone-50' : ''}
+                  `}
                 >
-                  اليوم
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => fetchTasks()}
-                  className="text-gray-400 hover:text-purple-600 h-8 w-8"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
+                  {c.d}
+                  {/* مؤشر المهام */}
+                  {ht && !sel && (
+                    <span
+                      className={`absolute bottom-1 w-1 h-1 rounded-full ${
+                        ad ? 'bg-emerald-400' : hp ? 'bg-stone-400' : 'bg-stone-300'
+                      }`}
+                    />
+                  )}
+                  {ht && sel && (
+                    <span className="absolute bottom-1 w-1 h-1 rounded-full bg-white/60" />
+                  )}
+                  {/* خط تحت اليوم الحالي */}
+                  {tod && !sel && (
+                    <span className="absolute bottom-0.5 w-4 h-[1.5px] rounded-full bg-stone-800" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ═══ إضافة مهمة ═══ */}
+        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1 h-4 rounded-full bg-stone-800" />
+            <span className="text-xs text-stone-400 font-light">
+              {selStr === todayStr ? 'اليوم' : formatDateAr(selStr)}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="أضف مهمة جديدة..."
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+              className="h-11 rounded-xl border-stone-200 focus:border-stone-400 text-right text-sm font-light placeholder:text-stone-300"
+              disabled={addingTask}
+            />
+            <Button
+              onClick={handleAdd}
+              disabled={!newTask.trim() || addingTask}
+              className="h-11 w-11 rounded-xl bg-stone-800 hover:bg-stone-700 shrink-0 p-0"
+            >
+              {addingTask ? (
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 text-white" />
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* ═══ قائمة المهام ═══ */}
+        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-4">
+          {loading && dayTasks.length === 0 ? (
+            <div className="flex items-center justify-center py-10">
+              <span className="w-5 h-5 border-2 border-stone-200 border-t-stone-500 rounded-full animate-spin" />
+            </div>
+          ) : dayTasks.length === 0 ? (
+            <div className="text-center py-10">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-stone-50 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-stone-300" />
               </div>
+              <p className="text-sm text-stone-300 font-light">لا توجد مهام</p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* التقويم */}
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm overflow-hidden">
-          <CardContent className="p-4">
-            {/* رأس التقويم */}
-            <div className="flex items-center justify-between mb-4">
-              <Button variant="ghost" size="icon" onClick={goToNextMonth} className="h-8 w-8">
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-              <h2 className="text-lg font-bold text-gray-800">
-                {ARABIC_MONTHS[month]} {year}
-              </h2>
-              <Button variant="ghost" size="icon" onClick={goToPrevMonth} className="h-8 w-8">
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* أسماء الأيام */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {ARABIC_WEEKDAYS.map((day) => (
-                <div key={day} className="text-center text-xs font-medium text-gray-400 py-1">
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            {/* أيام الشهر */}
-            <div className="grid grid-cols-7 gap-1">
-              {calendarDays.map((item, i) => {
-                const isSelected = item.dateStr === selectedDateStr;
-                const isToday = item.dateStr === todayStr;
-                const hasTasks = datesWithTasks.has(item.dateStr);
-                const tasksOnDay = tasks.filter((t) => t.date === item.dateStr);
-                const hasUnDone = tasksOnDay.some((t) => !t.done);
-                const allDone = tasksOnDay.length > 0 && tasksOnDay.every((t) => t.done);
-
-                return (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      setSelectedDate(new Date(item.dateStr + 'T00:00:00'));
-                      if (!item.isCurrentMonth) setCalendarMonth(new Date(item.dateStr + 'T00:00:00'));
-                    }}
+          ) : (
+            <ScrollArea className="max-h-[50vh]">
+              <div className="space-y-1.5">
+                {dayTasks.map((task, idx) => (
+                  <div
+                    key={task.id}
                     className={`
-                      relative aspect-square flex flex-col items-center justify-center rounded-xl text-sm font-medium transition-all duration-200
-                      ${!item.isCurrentMonth ? 'text-gray-300' : 'text-gray-700'}
-                      ${isSelected ? 'bg-purple-600 text-white shadow-lg shadow-purple-200 scale-105' : 'hover:bg-purple-50'}
-                      ${isToday && !isSelected ? 'ring-2 ring-purple-300 ring-offset-1' : ''}
+                      group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300
+                      ${task.done
+                        ? 'bg-stone-50/50'
+                        : 'hover:bg-stone-50'
+                      }
                     `}
                   >
-                    {item.day}
-                    {/* نقاط المهام */}
-                    {hasTasks && !isSelected && (
-                      <div className="absolute bottom-1 flex gap-0.5">
-                        {allDone ? (
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                        ) : hasUnDone ? (
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                        ) : null}
-                      </div>
-                    )}
-                    {hasTasks && isSelected && (
-                      <div className="absolute bottom-1 flex gap-0.5">
-                        {allDone ? (
-                          <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
-                        ) : (
-                          <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
-                        )}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* عنوان اليوم المحدد + إضافة مهمة */}
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <CalendarDays className="w-4 h-4 text-purple-500" />
-              <h3 className="text-sm font-bold text-gray-700">
-                {selectedDateStr === todayStr ? 'مهام اليوم' : formatDate(selectedDateStr)}
-              </h3>
-              {totalCount > 0 && (
-                <span className="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-medium">
-                  {totalCount}
-                </span>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="اكتب مهمة جديدة..."
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-                className="h-11 rounded-xl border-2 focus:border-purple-500 transition-colors text-right text-sm"
-                disabled={addingTask}
-              />
-              <Button
-                onClick={handleAddTask}
-                disabled={!newTask.trim() || addingTask}
-                className="h-11 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 font-bold shrink-0"
-              >
-                {addingTask ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Plus className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* قائمة المهام */}
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-4">
-            {loading && tasksForSelectedDate.length === 0 ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
-              </div>
-            ) : tasksForSelectedDate.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                <CalendarDays className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                <p className="text-sm font-medium">لا توجد مهام في هذا اليوم</p>
-              </div>
-            ) : (
-              <ScrollArea className="max-h-[50vh]">
-                <div className="space-y-2">
-                  {tasksForSelectedDate.map((task) => (
-                    <div
-                      key={task.id}
-                      className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
-                        task.done
-                          ? 'bg-green-50 border border-green-100'
-                          : 'bg-gray-50 border border-gray-100 hover:border-purple-200'
-                      }`}
+                    {/* خانة التحديد */}
+                    <button
+                      onClick={() => handleToggle(task)}
+                      className={`
+                        shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300
+                        ${task.done
+                          ? 'bg-stone-700 border-stone-700'
+                          : 'border-stone-200 hover:border-stone-400'
+                        }
+                      `}
                     >
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleToggleTask(task)}
-                        className={`shrink-0 w-7 h-7 rounded-full ${
-                          task.done
-                            ? 'bg-green-500 text-white hover:bg-green-600'
-                            : 'border-2 border-gray-300 hover:border-purple-400'
-                        }`}
-                      >
-                        {task.done && <Check className="w-3.5 h-3.5" />}
-                      </Button>
-                      <span
-                        className={`flex-1 text-right text-sm transition-all duration-200 ${
-                          task.done ? 'line-through text-gray-400' : 'text-gray-700 font-medium'
-                        }`}
-                      >
-                        {task.text}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteTask(task.id)}
-                        className="shrink-0 w-7 h-7 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  ))}
+                      {task.done && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                    </button>
+
+                    {/* النص */}
+                    <span
+                      className={`
+                        flex-1 text-right text-sm transition-all duration-300
+                        ${task.done
+                          ? 'line-through text-stone-300 font-light'
+                          : 'text-stone-700 font-normal'
+                        }
+                      `}
+                    >
+                      {task.text}
+                    </span>
+
+                    {/* زر الحذف */}
+                    <button
+                      onClick={() => handleDelete(task.id)}
+                      className="shrink-0 w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 hover:bg-red-50 transition-all duration-200"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+
+          {/* ملخص المهام */}
+          {dayTasks.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-stone-50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  {doneCount === dayTasks.length && (
+                    <Sparkles className="w-3 h-3 text-amber-400" />
+                  )}
+                  <span className="text-[11px] text-stone-300 font-light">
+                    {doneCount === dayTasks.length
+                      ? 'جميع المهام مُنجزة'
+                      : `${dayTasks.length - doneCount} متبقية`
+                    }
+                  </span>
                 </div>
-              </ScrollArea>
-            )}
-          </CardContent>
-        </Card>
+                {/* شريط التقدم */}
+                <div className="w-20 h-1 rounded-full bg-stone-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-stone-600 transition-all duration-500 ease-out"
+                    style={{ width: `${dayTasks.length > 0 ? (doneCount / dayTasks.length) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
