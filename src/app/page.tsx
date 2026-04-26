@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Trash2, Plus, Calendar, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Check, Trash2, Plus, ChevronLeft, ChevronRight, Sparkles, CalendarCheck } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -22,7 +22,7 @@ const MONTHS = [
   'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
 ];
 
-const WEEKDAYS = ['أحد', 'إثن', 'ثلا', 'أرب', 'خمس', 'جمع', 'سبت'];
+const WEEKDAYS = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
 
 function formatDateAr(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
@@ -100,7 +100,6 @@ export default function Home() {
     } catch { /* silent */ }
   };
 
-  // مهام اليوم المحدد
   const dayTasks = tasks.filter((t) => t.date === selStr);
   const doneCount = dayTasks.filter((t) => t.done).length;
   const taskDates = new Set(tasks.map((t) => t.date));
@@ -141,18 +140,25 @@ export default function Home() {
     return dt.some((t) => !t.done);
   };
 
+  // إحصائيات الشهر
+  const monthTasks = tasks.filter((t) => {
+    const td = new Date(t.date + 'T00:00:00');
+    return td.getFullYear() === yr && td.getMonth() === mo;
+  });
+  const monthDone = monthTasks.filter((t) => t.done).length;
+
   return (
-    <div className="min-h-screen bg-stone-50 p-4 pb-10">
-      <div className="max-w-md mx-auto space-y-5">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 p-4 pb-10">
+      <div className="max-w-md mx-auto space-y-4">
 
         {/* ═══ الهيدر ═══ */}
-        <div className="pt-4 pb-1">
+        <div className="pt-6 pb-2">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-light tracking-tight text-stone-800">
+              <h1 className="text-3xl font-bold text-white tracking-tight">
                 مهامي
               </h1>
-              <p className="text-xs text-stone-400 mt-0.5 font-light">
+              <p className="text-sm text-slate-400 mt-1">
                 {selStr === todayStr
                   ? dayTasks.length > 0
                     ? `${doneCount} من ${dayTasks.length} مُنجزة`
@@ -164,7 +170,7 @@ export default function Home() {
               variant="ghost"
               size="sm"
               onClick={() => { setSelectedDate(new Date()); setCalMonth(new Date()); }}
-              className="text-stone-400 hover:text-stone-600 text-xs h-8 px-3 rounded-lg font-light"
+              className="text-slate-400 hover:text-white hover:bg-slate-700/50 text-xs h-9 px-4 rounded-xl border border-slate-700"
             >
               اليوم
             </Button>
@@ -172,35 +178,47 @@ export default function Home() {
         </div>
 
         {/* ═══ التقويم ═══ */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-5">
+        <div className="bg-slate-800/80 rounded-3xl border border-slate-700/50 p-5 shadow-2xl shadow-black/20">
           {/* رأس التقويم */}
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setCalMonth((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-stone-600 hover:bg-stone-50 transition-all"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all border border-slate-700/50"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
             <div className="text-center">
-              <span className="text-sm font-medium text-stone-700 tracking-wide">
+              <span className="text-base font-bold text-white">
                 {MONTHS[mo]}
               </span>
-              <span className="text-sm text-stone-400 mr-1.5 font-light">
+              <span className="text-base text-slate-400 mr-2">
                 {yr}
               </span>
             </div>
             <button
               onClick={() => setCalMonth((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1))}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-stone-600 hover:bg-stone-50 transition-all"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all border border-slate-700/50"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
           </div>
 
+          {/* إحصائيات سريعة */}
+          <div className="flex items-center gap-3 mb-4 px-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-violet-400" />
+              <span className="text-[11px] text-slate-400">{monthTasks.length - monthDone} قيد التنفيذ</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="text-[11px] text-slate-400">{monthDone} مُنجزة</span>
+            </div>
+          </div>
+
           {/* أسماء الأيام */}
           <div className="grid grid-cols-7 mb-2">
             {WEEKDAYS.map((w) => (
-              <div key={w} className="text-center text-[10px] text-stone-300 font-medium tracking-wider py-1.5 uppercase">
+              <div key={w} className="text-center text-[11px] text-slate-500 font-semibold py-2">
                 {w}
               </div>
             ))}
@@ -223,28 +241,24 @@ export default function Home() {
                     if (!c.cur) setCalMonth(new Date(c.ds + 'T00:00:00'));
                   }}
                   className={`
-                    relative flex flex-col items-center justify-center h-10 rounded-xl text-[13px] transition-all duration-300 ease-out
-                    ${!c.cur ? 'text-stone-200' : 'text-stone-600'}
-                    ${sel ? 'bg-stone-800 text-white shadow-md shadow-stone-200 font-medium' : ''}
-                    ${tod && !sel ? 'text-stone-900 font-semibold' : ''}
-                    ${!sel && c.cur ? 'hover:bg-stone-50' : ''}
+                    relative flex flex-col items-center justify-center h-11 rounded-2xl text-sm transition-all duration-200
+                    ${!c.cur ? 'text-slate-600' : 'text-slate-300'}
+                    ${sel ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30 font-bold scale-110' : ''}
+                    ${tod && !sel ? 'bg-slate-700 text-white font-bold ring-2 ring-violet-500/50' : ''}
+                    ${!sel && !tod && c.cur ? 'hover:bg-slate-700/50' : ''}
                   `}
                 >
                   {c.d}
                   {/* مؤشر المهام */}
                   {ht && !sel && (
                     <span
-                      className={`absolute bottom-1 w-1 h-1 rounded-full ${
-                        ad ? 'bg-emerald-400' : hp ? 'bg-stone-400' : 'bg-stone-300'
+                      className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${
+                        ad ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : hp ? 'bg-violet-400 shadow-sm shadow-violet-400/50' : 'bg-slate-500'
                       }`}
                     />
                   )}
                   {ht && sel && (
-                    <span className="absolute bottom-1 w-1 h-1 rounded-full bg-white/60" />
-                  )}
-                  {/* خط تحت اليوم الحالي */}
-                  {tod && !sel && (
-                    <span className="absolute bottom-0.5 w-4 h-[1.5px] rounded-full bg-stone-800" />
+                    <span className="absolute bottom-1.5 w-1.5 h-1.5 rounded-full bg-white/80" />
                   )}
                 </button>
               );
@@ -253,12 +267,17 @@ export default function Home() {
         </div>
 
         {/* ═══ إضافة مهمة ═══ */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1 h-4 rounded-full bg-stone-800" />
-            <span className="text-xs text-stone-400 font-light">
-              {selStr === todayStr ? 'اليوم' : formatDateAr(selStr)}
+        <div className="bg-slate-800/80 rounded-3xl border border-slate-700/50 p-4 shadow-xl shadow-black/10">
+          <div className="flex items-center gap-2.5 mb-3">
+            <CalendarCheck className="w-4 h-4 text-violet-400" />
+            <span className="text-sm font-semibold text-white">
+              {selStr === todayStr ? 'مهام اليوم' : formatDateAr(selStr)}
             </span>
+            {dayTasks.length > 0 && (
+              <span className="text-xs bg-violet-600/30 text-violet-300 px-2.5 py-0.5 rounded-full font-bold">
+                {dayTasks.length}
+              </span>
+            )}
           </div>
           <div className="flex gap-2">
             <Input
@@ -266,47 +285,48 @@ export default function Home() {
               value={newTask}
               onChange={(e) => setNewTask(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-              className="h-11 rounded-xl border-stone-200 focus:border-stone-400 text-right text-sm font-light placeholder:text-stone-300"
+              className="h-12 rounded-2xl border-slate-600 bg-slate-700/50 text-white placeholder:text-slate-500 focus:border-violet-500 focus:ring-violet-500/20 text-right text-sm"
               disabled={addingTask}
             />
             <Button
               onClick={handleAdd}
               disabled={!newTask.trim() || addingTask}
-              className="h-11 w-11 rounded-xl bg-stone-800 hover:bg-stone-700 shrink-0 p-0"
+              className="h-12 w-12 rounded-2xl bg-violet-600 hover:bg-violet-500 shrink-0 p-0 shadow-lg shadow-violet-600/30"
             >
               {addingTask ? (
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <Plus className="w-4 h-4 text-white" />
+                <Plus className="w-5 h-5 text-white" />
               )}
             </Button>
           </div>
         </div>
 
         {/* ═══ قائمة المهام ═══ */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-4">
+        <div className="bg-slate-800/80 rounded-3xl border border-slate-700/50 p-4 shadow-xl shadow-black/10">
           {loading && dayTasks.length === 0 ? (
-            <div className="flex items-center justify-center py-10">
-              <span className="w-5 h-5 border-2 border-stone-200 border-t-stone-500 rounded-full animate-spin" />
+            <div className="flex items-center justify-center py-12">
+              <span className="w-6 h-6 border-2 border-slate-600 border-t-violet-400 rounded-full animate-spin" />
             </div>
           ) : dayTasks.length === 0 ? (
-            <div className="text-center py-10">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-stone-50 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-stone-300" />
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-700/50 flex items-center justify-center">
+                <CalendarCheck className="w-7 h-7 text-slate-500" />
               </div>
-              <p className="text-sm text-stone-300 font-light">لا توجد مهام</p>
+              <p className="text-sm text-slate-500 font-medium">لا توجد مهام في هذا اليوم</p>
+              <p className="text-xs text-slate-600 mt-1">أضف مهمة جديدة بالأعلى</p>
             </div>
           ) : (
             <ScrollArea className="max-h-[50vh]">
-              <div className="space-y-1.5">
-                {dayTasks.map((task, idx) => (
+              <div className="space-y-2">
+                {dayTasks.map((task) => (
                   <div
                     key={task.id}
                     className={`
-                      group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300
+                      group flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-200
                       ${task.done
-                        ? 'bg-stone-50/50'
-                        : 'hover:bg-stone-50'
+                        ? 'bg-slate-700/30 border border-slate-700/30'
+                        : 'bg-slate-700/50 border border-slate-600/50 hover:border-violet-500/30'
                       }
                     `}
                   >
@@ -314,23 +334,23 @@ export default function Home() {
                     <button
                       onClick={() => handleToggle(task)}
                       className={`
-                        shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300
+                        shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200
                         ${task.done
-                          ? 'bg-stone-700 border-stone-700'
-                          : 'border-stone-200 hover:border-stone-400'
+                          ? 'bg-emerald-500 border-emerald-500 shadow-sm shadow-emerald-500/30'
+                          : 'border-slate-500 hover:border-violet-400 hover:bg-violet-500/10'
                         }
                       `}
                     >
-                      {task.done && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                      {task.done && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
                     </button>
 
                     {/* النص */}
                     <span
                       className={`
-                        flex-1 text-right text-sm transition-all duration-300
+                        flex-1 text-right text-sm transition-all duration-200
                         ${task.done
-                          ? 'line-through text-stone-300 font-light'
-                          : 'text-stone-700 font-normal'
+                          ? 'line-through text-slate-500'
+                          : 'text-white font-medium'
                         }
                       `}
                     >
@@ -340,9 +360,9 @@ export default function Home() {
                     {/* زر الحذف */}
                     <button
                       onClick={() => handleDelete(task.id)}
-                      className="shrink-0 w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 hover:bg-red-50 transition-all duration-200"
+                      className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 ))}
@@ -350,28 +370,35 @@ export default function Home() {
             </ScrollArea>
           )}
 
-          {/* ملخص المهام */}
+          {/* شريط التقدم */}
           {dayTasks.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-stone-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
+            <div className="mt-4 pt-4 border-t border-slate-700/50">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
                   {doneCount === dayTasks.length && (
-                    <Sparkles className="w-3 h-3 text-amber-400" />
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   )}
-                  <span className="text-[11px] text-stone-300 font-light">
+                  <span className="text-xs text-slate-400 font-medium">
                     {doneCount === dayTasks.length
-                      ? 'جميع المهام مُنجزة'
+                      ? 'جميع المهام مُنجزة!'
                       : `${dayTasks.length - doneCount} متبقية`
                     }
                   </span>
                 </div>
-                {/* شريط التقدم */}
-                <div className="w-20 h-1 rounded-full bg-stone-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-stone-600 transition-all duration-500 ease-out"
-                    style={{ width: `${dayTasks.length > 0 ? (doneCount / dayTasks.length) * 100 : 0}%` }}
-                  />
-                </div>
+                <span className="text-xs text-violet-400 font-bold">
+                  {Math.round((doneCount / dayTasks.length) * 100)}%
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-slate-700 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700 ease-out"
+                  style={{
+                    width: `${(doneCount / dayTasks.length) * 100}%`,
+                    background: doneCount === dayTasks.length
+                      ? 'linear-gradient(90deg, #10b981, #34d399)'
+                      : 'linear-gradient(90deg, #7c3aed, #a78bfa)',
+                  }}
+                />
               </div>
             </div>
           )}
