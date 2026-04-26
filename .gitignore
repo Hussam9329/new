@@ -52,3 +52,25 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Z scripts
+/.zscripts/
+
+# DB files
+/db/
+
+# Upload & download
+/upload/
+/download/
+
+# Examples
+/examples/
+
+# Mini services
+/mini-services/
+
+# Caddy
+Caddyfile
+
+# bun
+bun.lock
