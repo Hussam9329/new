@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Trash2, Plus, ChevronLeft, ChevronRight, Sparkles, CalendarCheck } from 'lucide-react';
+import { Check, Trash2, Plus, ChevronLeft, ChevronRight, Sparkles, CalendarCheck, Printer } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -148,8 +148,9 @@ export default function Home() {
   const monthDone = monthTasks.filter((t) => t.done).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 p-4 pb-10">
-      <div className="max-w-md mx-auto space-y-4">
+    <>
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 p-4 pb-10 no-print">
+        <div className="max-w-md mx-auto space-y-4">
 
         {/* ═══ الهيدر ═══ */}
         <div className="pt-6 pb-2">
@@ -268,16 +269,28 @@ export default function Home() {
 
         {/* ═══ إضافة مهمة ═══ */}
         <div className="bg-slate-800/80 rounded-3xl border border-slate-700/50 p-4 shadow-xl shadow-black/10">
-          <div className="flex items-center gap-2.5 mb-3">
-            <CalendarCheck className="w-4 h-4 text-violet-400" />
-            <span className="text-sm font-semibold text-white">
-              {selStr === todayStr ? 'مهام اليوم' : formatDateAr(selStr)}
-            </span>
-            {dayTasks.length > 0 && (
-              <span className="text-xs bg-violet-600/30 text-violet-300 px-2.5 py-0.5 rounded-full font-bold">
-                {dayTasks.length}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <CalendarCheck className="w-4 h-4 text-violet-400" />
+              <span className="text-sm font-semibold text-white">
+                {selStr === todayStr ? 'مهام اليوم' : formatDateAr(selStr)}
               </span>
-            )}
+              {dayTasks.length > 0 && (
+                <span className="text-xs bg-violet-600/30 text-violet-300 px-2.5 py-0.5 rounded-full font-bold">
+                  {dayTasks.length}
+                </span>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.print()}
+              disabled={dayTasks.length === 0}
+              className="text-slate-400 hover:text-white hover:bg-slate-700/50 h-8 w-8 p-0 rounded-lg border border-slate-700"
+              title="طباعة المهام"
+            >
+              <Printer className="w-4 h-4" />
+            </Button>
           </div>
           <div className="flex gap-2">
             <Input
@@ -405,6 +418,27 @@ export default function Home() {
         </div>
 
       </div>
-    </div>
+
+      {/* ═══ Printable Area ═══ */}
+      <div className="print-only p-8 text-black bg-white" dir="rtl">
+        <h1 className="text-2xl font-bold mb-4 border-b-2 pb-2 border-black">قائمة مهام يوم {formatDateAr(selStr)}</h1>
+        <div className="space-y-4 mt-6">
+          {dayTasks.map((task) => (
+            <div key={task.id} className="flex items-start gap-3 border-b border-gray-200 pb-3">
+              <div className={`mt-1 w-5 h-5 border-2 border-black rounded-md flex-shrink-0 flex items-center justify-center ${task.done ? 'bg-black' : ''}`}>
+                {task.done && <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />}
+              </div>
+              <span className={`text-lg ${task.done ? 'line-through text-gray-500' : 'font-medium'}`}>
+                {task.text}
+              </span>
+            </div>
+          ))}
+        </div>
+        {dayTasks.length === 0 && <p className="text-center py-10 text-gray-500 italic">لا توجد مهام لهذا اليوم.</p>}
+        <div className="mt-10 pt-4 border-t border-gray-100 text-xs text-gray-400 text-left">
+          تطبيق مهامي - {new Date().toLocaleString('ar-EG')}
+        </div>
+      </div>
+    </>
   );
 }
