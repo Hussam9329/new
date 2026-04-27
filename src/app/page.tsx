@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Check, Trash2, Plus, ChevronLeft, ChevronRight, Sparkles, CalendarCheck, Printer } from 'lucide-react';
@@ -105,7 +104,6 @@ export default function Home() {
   const taskDates = new Set(tasks.map((t) => t.date));
   const todayStr = toDS(new Date());
 
-  // بناء التقويم
   const yr = calMonth.getFullYear();
   const mo = calMonth.getMonth();
   const firstDow = new Date(yr, mo, 1).getDay();
@@ -140,7 +138,6 @@ export default function Home() {
     return dt.some((t) => !t.done);
   };
 
-  // إحصائيات الشهر
   const monthTasks = tasks.filter((t) => {
     const td = new Date(t.date + 'T00:00:00');
     return td.getFullYear() === yr && td.getMonth() === mo;
@@ -148,17 +145,13 @@ export default function Home() {
   const monthDone = monthTasks.filter((t) => t.done).length;
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 p-4 pb-10 no-print">
-        <div className="max-w-md mx-auto space-y-4">
-
-        {/* ═══ الهيدر ═══ */}
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 no-print">
+      <div className="max-w-md mx-auto space-y-4 p-4 pb-10">
+        {/* الهيدر */}
         <div className="pt-6 pb-2">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">
-                مهامي
-              </h1>
+              <h1 className="text-3xl font-bold text-white tracking-tight">مهامي</h1>
               <p className="text-sm text-slate-400 mt-1">
                 {selStr === todayStr
                   ? dayTasks.length > 0
@@ -178,9 +171,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ═══ التقويم ═══ */}
+        {/* التقويم */}
         <div className="bg-slate-800/80 rounded-3xl border border-slate-700/50 p-5 shadow-2xl shadow-black/20">
-          {/* رأس التقويم */}
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setCalMonth((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))}
@@ -189,12 +181,8 @@ export default function Home() {
               <ChevronRight className="w-4 h-4" />
             </button>
             <div className="text-center">
-              <span className="text-base font-bold text-white">
-                {MONTHS[mo]}
-              </span>
-              <span className="text-base text-slate-400 mr-2">
-                {yr}
-              </span>
+              <span className="text-base font-bold text-white">{MONTHS[mo]}</span>
+              <span className="text-base text-slate-400 mr-2">{yr}</span>
             </div>
             <button
               onClick={() => setCalMonth((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1))}
@@ -204,7 +192,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* إحصائيات سريعة */}
           <div className="flex items-center gap-3 mb-4 px-1">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-violet-400" />
@@ -216,16 +203,12 @@ export default function Home() {
             </div>
           </div>
 
-          {/* أسماء الأيام */}
           <div className="grid grid-cols-7 mb-2">
             {WEEKDAYS.map((w) => (
-              <div key={w} className="text-center text-[11px] text-slate-500 font-semibold py-2">
-                {w}
-              </div>
+              <div key={w} className="text-center text-[11px] text-slate-500 font-semibold py-2">{w}</div>
             ))}
           </div>
 
-          {/* أيام الشهر */}
           <div className="grid grid-cols-7 gap-y-1">
             {cells.map((c, i) => {
               const sel = isSel(c.ds);
@@ -233,7 +216,6 @@ export default function Home() {
               const ht = hasTasks(c.ds);
               const ad = allDone(c.ds);
               const hp = hasPending(c.ds);
-
               return (
                 <button
                   key={i}
@@ -250,13 +232,8 @@ export default function Home() {
                   `}
                 >
                   {c.d}
-                  {/* مؤشر المهام */}
                   {ht && !sel && (
-                    <span
-                      className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${
-                        ad ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : hp ? 'bg-violet-400 shadow-sm shadow-violet-400/50' : 'bg-slate-500'
-                      }`}
-                    />
+                    <span className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${ad ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : hp ? 'bg-violet-400 shadow-sm shadow-violet-400/50' : 'bg-slate-500'}`} />
                   )}
                   {ht && sel && (
                     <span className="absolute bottom-1.5 w-1.5 h-1.5 rounded-full bg-white/80" />
@@ -267,7 +244,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ═══ إضافة مهمة ═══ */}
+        {/* إضافة مهمة */}
         <div className="bg-slate-800/80 rounded-3xl border border-slate-700/50 p-4 shadow-xl shadow-black/10">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
@@ -276,9 +253,7 @@ export default function Home() {
                 {selStr === todayStr ? 'مهام اليوم' : formatDateAr(selStr)}
               </span>
               {dayTasks.length > 0 && (
-                <span className="text-xs bg-violet-600/30 text-violet-300 px-2.5 py-0.5 rounded-full font-bold">
-                  {dayTasks.length}
-                </span>
+                <span className="text-xs bg-violet-600/30 text-violet-300 px-2.5 py-0.5 rounded-full font-bold">{dayTasks.length}</span>
               )}
             </div>
             <Button
@@ -315,7 +290,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ═══ قائمة المهام ═══ */}
+        {/* قائمة المهام */}
         <div className="bg-slate-800/80 rounded-3xl border border-slate-700/50 p-4 shadow-xl shadow-black/10">
           {loading && dayTasks.length === 0 ? (
             <div className="flex items-center justify-center py-12">
@@ -335,42 +310,17 @@ export default function Home() {
                 {dayTasks.map((task) => (
                   <div
                     key={task.id}
-                    className={`
-                      group flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-200
-                      ${task.done
-                        ? 'bg-slate-700/30 border border-slate-700/30'
-                        : 'bg-slate-700/50 border border-slate-600/50 hover:border-violet-500/30'
-                      }
-                    `}
+                    className={`group flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-200 ${task.done ? 'bg-slate-700/30 border border-slate-700/30' : 'bg-slate-700/50 border border-slate-600/50 hover:border-violet-500/30'}`}
                   >
-                    {/* خانة التحديد */}
                     <button
                       onClick={() => handleToggle(task)}
-                      className={`
-                        shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200
-                        ${task.done
-                          ? 'bg-emerald-500 border-emerald-500 shadow-sm shadow-emerald-500/30'
-                          : 'border-slate-500 hover:border-violet-400 hover:bg-violet-500/10'
-                        }
-                      `}
+                      className={`shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${task.done ? 'bg-emerald-500 border-emerald-500 shadow-sm shadow-emerald-500/30' : 'border-slate-500 hover:border-violet-400 hover:bg-violet-500/10'}`}
                     >
                       {task.done && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
                     </button>
-
-                    {/* النص */}
-                    <span
-                      className={`
-                        flex-1 text-right text-sm transition-all duration-200
-                        ${task.done
-                          ? 'line-through text-slate-500'
-                          : 'text-white font-medium'
-                        }
-                      `}
-                    >
+                    <span className={`flex-1 text-right text-sm transition-all duration-200 ${task.done ? 'line-through text-slate-500' : 'text-white font-medium'}`}>
                       {task.text}
                     </span>
-
-                    {/* زر الحذف */}
                     <button
                       onClick={() => handleDelete(task.id)}
                       className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
@@ -383,43 +333,32 @@ export default function Home() {
             </ScrollArea>
           )}
 
-          {/* شريط التقدم */}
           {dayTasks.length > 0 && (
             <div className="mt-4 pt-4 border-t border-slate-700/50">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  {doneCount === dayTasks.length && (
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  )}
+                  {doneCount === dayTasks.length && <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
                   <span className="text-xs text-slate-400 font-medium">
-                    {doneCount === dayTasks.length
-                      ? 'جميع المهام مُنجزة!'
-                      : `${dayTasks.length - doneCount} متبقية`
-                    }
+                    {doneCount === dayTasks.length ? 'جميع المهام مُنجزة!' : `${dayTasks.length - doneCount} متبقية`}
                   </span>
                 </div>
-                <span className="text-xs text-violet-400 font-bold">
-                  {Math.round((doneCount / dayTasks.length) * 100)}%
-                </span>
+                <span className="text-xs text-violet-400 font-bold">{Math.round((doneCount / dayTasks.length) * 100)}%</span>
               </div>
               <div className="w-full h-2 rounded-full bg-slate-700 overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{
                     width: `${(doneCount / dayTasks.length) * 100}%`,
-                    background: doneCount === dayTasks.length
-                      ? 'linear-gradient(90deg, #10b981, #34d399)'
-                      : 'linear-gradient(90deg, #7c3aed, #a78bfa)',
+                    background: doneCount === dayTasks.length ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #7c3aed, #a78bfa)',
                   }}
                 />
               </div>
             </div>
           )}
         </div>
-
       </div>
 
-      {/* ═══ Printable Area ═══ */}
+      {/* Printable Area */}
       <div className="print-only p-8 text-black bg-white" dir="rtl">
         <h1 className="text-2xl font-bold mb-4 border-b-2 pb-2 border-black">قائمة مهام يوم {formatDateAr(selStr)}</h1>
         <div className="space-y-4 mt-6">
@@ -428,9 +367,7 @@ export default function Home() {
               <div className={`mt-1 w-5 h-5 border-2 border-black rounded-md flex-shrink-0 flex items-center justify-center ${task.done ? 'bg-black' : ''}`}>
                 {task.done && <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />}
               </div>
-              <span className={`text-lg ${task.done ? 'line-through text-gray-500' : 'font-medium'}`}>
-                {task.text}
-              </span>
+              <span className={`text-lg ${task.done ? 'line-through text-gray-500' : 'font-medium'}`}>{task.text}</span>
             </div>
           ))}
         </div>
@@ -439,6 +376,6 @@ export default function Home() {
           تطبيق مهامي - {new Date().toLocaleString('ar-EG')}
         </div>
       </div>
-    </>
+    </div>
   );
 }
