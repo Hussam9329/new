@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Trash2, Plus, ChevronLeft, ChevronRight, Sparkles, CalendarCheck, Printer } from 'lucide-react';
+import { Check, Trash2, Plus, ChevronLeft, ChevronRight, Sparkles, CalendarCheck, Printer, Flame } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -145,17 +145,25 @@ export default function Home() {
   const monthDone = monthTasks.filter((t) => t.done).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 no-print">
-      <div className="max-w-md mx-auto space-y-4 p-4 pb-10">
-        {/* الهيدر */}
-        <div className="pt-6 pb-2">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-violet-950 no-print">
+      <div className="max-w-md mx-auto space-y-5 p-4 pb-12">
+
+        {/* ═══════ الهيدر - تصميم بارز ═══════ */}
+        <div className="pt-8 pb-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">مهامي</h1>
-              <p className="text-sm text-slate-400 mt-1">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                  <Flame className="w-5 h-5 text-white" />
+                </div>
+                <h1 className="text-4xl font-black text-white tracking-tight">
+                  مهامي
+                </h1>
+              </div>
+              <p className="text-sm text-slate-400 mt-2 mr-13">
                 {selStr === todayStr
                   ? dayTasks.length > 0
-                    ? `${doneCount} من ${dayTasks.length} مُنجزة`
+                    ? <span><span className="text-violet-400 font-bold">{doneCount}</span> من <span className="text-white font-bold">{dayTasks.length}</span> مُنجزة</span>
                     : 'ابدأ يومك بمهمة جديدة'
                   : formatDateAr(selStr)}
               </p>
@@ -164,58 +172,63 @@ export default function Home() {
               variant="ghost"
               size="sm"
               onClick={() => { setSelectedDate(new Date()); setCalMonth(new Date()); }}
-              className="text-slate-400 hover:text-white hover:bg-slate-700/50 text-xs h-9 px-4 rounded-xl border border-slate-700"
+              className="text-violet-300 hover:text-white hover:bg-violet-600/30 text-sm h-10 px-5 rounded-2xl border border-violet-500/40 bg-violet-500/10 font-bold"
             >
               اليوم
             </Button>
           </div>
         </div>
 
-        {/* التقويم */}
-        <div className="bg-slate-800/80 rounded-3xl border border-slate-700/50 p-5 shadow-2xl shadow-black/20">
-          <div className="flex items-center justify-between mb-4">
+        {/* ═══════ التقويم - تصميم بارز ═══════ */}
+        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-3xl border border-violet-500/20 p-5 shadow-2xl shadow-violet-900/20">
+          {/* رأس التقويم */}
+          <div className="flex items-center justify-between mb-5">
             <button
               onClick={() => setCalMonth((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all border border-slate-700/50"
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-violet-600/30 transition-all border border-slate-700/50 hover:border-violet-500/50"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-5 h-5" />
             </button>
             <div className="text-center">
-              <span className="text-base font-bold text-white">{MONTHS[mo]}</span>
-              <span className="text-base text-slate-400 mr-2">{yr}</span>
+              <span className="text-xl font-black text-white">{MONTHS[mo]}</span>
+              <span className="text-lg text-violet-400 font-bold mr-2">{yr}</span>
             </div>
             <button
               onClick={() => setCalMonth((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1))}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all border border-slate-700/50"
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-violet-600/30 transition-all border border-slate-700/50 hover:border-violet-500/50"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex items-center gap-3 mb-4 px-1">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-violet-400" />
-              <span className="text-[11px] text-slate-400">{monthTasks.length - monthDone} قيد التنفيذ</span>
+          {/* إحصائيات سريعة - بارزة */}
+          <div className="flex items-center gap-4 mb-5 px-1">
+            <div className="flex items-center gap-2 bg-violet-500/10 px-3 py-1.5 rounded-full border border-violet-500/20">
+              <span className="w-2.5 h-2.5 rounded-full bg-violet-400 shadow-md shadow-violet-400/50" />
+              <span className="text-xs text-violet-300 font-bold">{monthTasks.length - monthDone} قيد التنفيذ</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="text-[11px] text-slate-400">{monthDone} مُنجزة</span>
+            <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-md shadow-emerald-400/50" />
+              <span className="text-xs text-emerald-300 font-bold">{monthDone} مُنجزة</span>
             </div>
           </div>
 
+          {/* أسماء الأيام */}
           <div className="grid grid-cols-7 mb-2">
             {WEEKDAYS.map((w) => (
-              <div key={w} className="text-center text-[11px] text-slate-500 font-semibold py-2">{w}</div>
+              <div key={w} className="text-center text-xs text-violet-400 font-bold py-2">{w}</div>
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-y-1">
+          {/* أيام الشهر - بارزة */}
+          <div className="grid grid-cols-7 gap-y-1.5">
             {cells.map((c, i) => {
               const sel = isSel(c.ds);
               const tod = isToday(c.ds);
               const ht = hasTasks(c.ds);
               const ad = allDone(c.ds);
               const hp = hasPending(c.ds);
+
               return (
                 <button
                   key={i}
@@ -224,19 +237,23 @@ export default function Home() {
                     if (!c.cur) setCalMonth(new Date(c.ds + 'T00:00:00'));
                   }}
                   className={`
-                    relative flex flex-col items-center justify-center h-11 rounded-2xl text-sm transition-all duration-200
+                    relative flex flex-col items-center justify-center h-12 rounded-2xl text-sm font-bold transition-all duration-200
                     ${!c.cur ? 'text-slate-600' : 'text-slate-300'}
-                    ${sel ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30 font-bold scale-110' : ''}
-                    ${tod && !sel ? 'bg-slate-700 text-white font-bold ring-2 ring-violet-500/50' : ''}
-                    ${!sel && !tod && c.cur ? 'hover:bg-slate-700/50' : ''}
+                    ${sel ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-600/40 scale-110 ring-2 ring-violet-400/50' : ''}
+                    ${tod && !sel ? 'bg-slate-700 text-white ring-2 ring-fuchsia-500/50 shadow-md shadow-fuchsia-500/20' : ''}
+                    ${!sel && !tod && c.cur ? 'hover:bg-violet-600/20 hover:text-white' : ''}
                   `}
                 >
                   {c.d}
                   {ht && !sel && (
-                    <span className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${ad ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : hp ? 'bg-violet-400 shadow-sm shadow-violet-400/50' : 'bg-slate-500'}`} />
+                    <span
+                      className={`absolute bottom-1 w-2 h-2 rounded-full ${
+                        ad ? 'bg-emerald-400 shadow-md shadow-emerald-400/60' : hp ? 'bg-violet-400 shadow-md shadow-violet-400/60' : 'bg-slate-500'
+                      }`}
+                    />
                   )}
                   {ht && sel && (
-                    <span className="absolute bottom-1.5 w-1.5 h-1.5 rounded-full bg-white/80" />
+                    <span className="absolute bottom-1 w-2 h-2 rounded-full bg-white/90 shadow-md shadow-white/30" />
                   )}
                 </button>
               );
@@ -244,16 +261,20 @@ export default function Home() {
           </div>
         </div>
 
-        {/* إضافة مهمة */}
-        <div className="bg-slate-800/80 rounded-3xl border border-slate-700/50 p-4 shadow-xl shadow-black/10">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <CalendarCheck className="w-4 h-4 text-violet-400" />
-              <span className="text-sm font-semibold text-white">
+        {/* ═══════ إضافة مهمة - تصميم بارز ═══════ */}
+        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-3xl border border-violet-500/20 p-5 shadow-xl shadow-violet-900/10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                <CalendarCheck className="w-4 h-4 text-violet-400" />
+              </div>
+              <span className="text-base font-bold text-white">
                 {selStr === todayStr ? 'مهام اليوم' : formatDateAr(selStr)}
               </span>
               {dayTasks.length > 0 && (
-                <span className="text-xs bg-violet-600/30 text-violet-300 px-2.5 py-0.5 rounded-full font-bold">{dayTasks.length}</span>
+                <span className="text-xs bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white px-3 py-1 rounded-full font-black shadow-md shadow-violet-500/30">
+                  {dayTasks.length}
+                </span>
               )}
             </div>
             <Button
@@ -261,69 +282,94 @@ export default function Home() {
               size="sm"
               onClick={() => window.print()}
               disabled={dayTasks.length === 0}
-              className="text-slate-400 hover:text-white hover:bg-slate-700/50 h-8 w-8 p-0 rounded-lg border border-slate-700"
+              className="text-slate-400 hover:text-white hover:bg-slate-700/50 h-9 w-9 p-0 rounded-xl border border-slate-700/50"
               title="طباعة المهام"
             >
               <Printer className="w-4 h-4" />
             </Button>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Input
               placeholder="أضف مهمة جديدة..."
               value={newTask}
               onChange={(e) => setNewTask(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-              className="h-12 rounded-2xl border-slate-600 bg-slate-700/50 text-white placeholder:text-slate-500 focus:border-violet-500 focus:ring-violet-500/20 text-right text-sm"
+              className="h-14 rounded-2xl border-violet-500/30 bg-slate-700/60 text-white placeholder:text-slate-500 focus:border-violet-500 focus:ring-violet-500/30 text-right text-base font-medium"
               disabled={addingTask}
             />
             <Button
               onClick={handleAdd}
               disabled={!newTask.trim() || addingTask}
-              className="h-12 w-12 rounded-2xl bg-violet-600 hover:bg-violet-500 shrink-0 p-0 shadow-lg shadow-violet-600/30"
+              className="h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 shrink-0 p-0 shadow-xl shadow-violet-600/40 transition-all duration-200 hover:scale-105"
             >
               {addingTask ? (
-                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <Plus className="w-5 h-5 text-white" />
+                <Plus className="w-6 h-6 text-white" strokeWidth={3} />
               )}
             </Button>
           </div>
         </div>
 
-        {/* قائمة المهام */}
-        <div className="bg-slate-800/80 rounded-3xl border border-slate-700/50 p-4 shadow-xl shadow-black/10">
+        {/* ═══════ قائمة المهام - تصميم بارز ═══════ */}
+        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-3xl border border-violet-500/20 p-5 shadow-xl shadow-violet-900/10">
           {loading && dayTasks.length === 0 ? (
-            <div className="flex items-center justify-center py-12">
-              <span className="w-6 h-6 border-2 border-slate-600 border-t-violet-400 rounded-full animate-spin" />
+            <div className="flex items-center justify-center py-14">
+              <span className="w-8 h-8 border-3 border-slate-600 border-t-violet-400 rounded-full animate-spin" />
             </div>
           ) : dayTasks.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-700/50 flex items-center justify-center">
-                <CalendarCheck className="w-7 h-7 text-slate-500" />
+            <div className="text-center py-14">
+              <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-gradient-to-br from-slate-700/50 to-slate-800/50 flex items-center justify-center border border-slate-700/30">
+                <CalendarCheck className="w-9 h-9 text-slate-500" />
               </div>
-              <p className="text-sm text-slate-500 font-medium">لا توجد مهام في هذا اليوم</p>
-              <p className="text-xs text-slate-600 mt-1">أضف مهمة جديدة بالأعلى</p>
+              <p className="text-base text-slate-400 font-bold">لا توجد مهام في هذا اليوم</p>
+              <p className="text-sm text-slate-600 mt-2">أضف مهمة جديدة بالأعلى</p>
             </div>
           ) : (
             <ScrollArea className="max-h-[50vh]">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {dayTasks.map((task) => (
                   <div
                     key={task.id}
-                    className={`group flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-200 ${task.done ? 'bg-slate-700/30 border border-slate-700/30' : 'bg-slate-700/50 border border-slate-600/50 hover:border-violet-500/30'}`}
+                    className={`
+                      group flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                      ${task.done
+                        ? 'bg-slate-700/20 border border-slate-700/20'
+                        : 'bg-gradient-to-r from-slate-700/50 to-slate-700/30 border border-violet-500/20 hover:border-violet-500/40 hover:shadow-md hover:shadow-violet-500/10'
+                      }
+                    `}
                   >
+                    {/* خانة التحديد */}
                     <button
                       onClick={() => handleToggle(task)}
-                      className={`shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${task.done ? 'bg-emerald-500 border-emerald-500 shadow-sm shadow-emerald-500/30' : 'border-slate-500 hover:border-violet-400 hover:bg-violet-500/10'}`}
+                      className={`
+                        shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all duration-200
+                        ${task.done
+                          ? 'bg-gradient-to-br from-emerald-500 to-green-400 border-emerald-500 shadow-md shadow-emerald-500/30'
+                          : 'border-slate-500 hover:border-violet-400 hover:bg-violet-500/15'
+                        }
+                      `}
                     >
-                      {task.done && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                      {task.done && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
                     </button>
-                    <span className={`flex-1 text-right text-sm transition-all duration-200 ${task.done ? 'line-through text-slate-500' : 'text-white font-medium'}`}>
+
+                    {/* النص */}
+                    <span
+                      className={`
+                        flex-1 text-right text-base transition-all duration-200
+                        ${task.done
+                          ? 'line-through text-slate-500'
+                          : 'text-white font-bold'
+                        }
+                      `}
+                    >
                       {task.text}
                     </span>
+
+                    {/* زر الحذف */}
                     <button
                       onClick={() => handleDelete(task.id)}
-                      className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                      className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 hover:bg-red-500/15 transition-all duration-200"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -333,23 +379,33 @@ export default function Home() {
             </ScrollArea>
           )}
 
+          {/* شريط التقدم - بارز */}
           {dayTasks.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-700/50">
-              <div className="flex items-center justify-between mb-2">
+            <div className="mt-5 pt-5 border-t border-slate-700/30">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  {doneCount === dayTasks.length && <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
-                  <span className="text-xs text-slate-400 font-medium">
-                    {doneCount === dayTasks.length ? 'جميع المهام مُنجزة!' : `${dayTasks.length - doneCount} متبقية`}
+                  {doneCount === dayTasks.length && (
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                  )}
+                  <span className="text-sm text-slate-400 font-bold">
+                    {doneCount === dayTasks.length
+                      ? 'جميع المهام مُنجزة!'
+                      : `${dayTasks.length - doneCount} متبقية`
+                    }
                   </span>
                 </div>
-                <span className="text-xs text-violet-400 font-bold">{Math.round((doneCount / dayTasks.length) * 100)}%</span>
+                <span className="text-sm text-violet-400 font-black">
+                  {Math.round((doneCount / dayTasks.length) * 100)}%
+                </span>
               </div>
-              <div className="w-full h-2 rounded-full bg-slate-700 overflow-hidden">
+              <div className="w-full h-3 rounded-full bg-slate-700 overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{
                     width: `${(doneCount / dayTasks.length) * 100}%`,
-                    background: doneCount === dayTasks.length ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #7c3aed, #a78bfa)',
+                    background: doneCount === dayTasks.length
+                      ? 'linear-gradient(90deg, #10b981, #34d399, #6ee7b7)'
+                      : 'linear-gradient(90deg, #7c3aed, #a78bfa, #c4b5fd)',
                   }}
                 />
               </div>
