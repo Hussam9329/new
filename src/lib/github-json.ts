@@ -121,7 +121,7 @@ export async function createTask(text: string, date?: string): Promise<Task> {
 }
 
 // تحديث مهمة
-export async function updateTask(id: string, updates: Partial<Pick<Task, 'done' | 'text'>>): Promise<Task> {
+export async function updateTask(id: string, updates: Partial<Pick<Task, 'done' | 'text' | 'date'>>): Promise<Task> {
   const { data, sha } = await readFileFromGitHub();
 
   const taskIndex = data.findIndex((t) => t.id === id);
@@ -131,6 +131,7 @@ export async function updateTask(id: string, updates: Partial<Pick<Task, 'done' 
 
   if (updates.done !== undefined) data[taskIndex].done = updates.done;
   if (updates.text !== undefined) data[taskIndex].text = updates.text.trim();
+  if (updates.date !== undefined) data[taskIndex].date = updates.date;
   data[taskIndex].updatedAt = new Date().toISOString();
 
   await writeFileToGitHub(data, sha);

@@ -9,11 +9,12 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { done, text } = body;
+    const { done, text, date } = body;
 
-    const updates: { done?: boolean; text?: string } = {};
+    const updates: { done?: boolean; text?: string; date?: string } = {};
     if (typeof done === 'boolean') updates.done = done;
     if (typeof text === 'string' && text.trim()) updates.text = text.trim();
+    if (typeof date === 'string' && date.trim()) updates.date = date.trim();
 
     const task = await updateTask(id, updates);
     return NextResponse.json(task);

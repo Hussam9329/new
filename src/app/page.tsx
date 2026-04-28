@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Trash2, Plus, ChevronLeft, ChevronRight, Sparkles, CalendarCheck, Printer, Flame } from 'lucide-react';
+import { Check, Trash2, Plus, ChevronLeft, ChevronRight, Sparkles, CalendarCheck, Printer, Flame, ArrowLeftRight, X } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -39,7 +39,10 @@ export default function Home() {
   const [addingTask, setAddingTask] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [calMonth, setCalMonth] = useState<Date>(new Date());
+  const [movingTaskId, setMovingTaskId] = useState<string | null>(null);
+  const [moveCalMonth, setMoveCalMonth] = useState<Date>(new Date());
   const { toast } = useToast();
+  const moveDialogRef = useRef<HTMLDivElement>(null);
 
   const selStr = toDS(selectedDate);
 
@@ -60,6 +63,17 @@ export default function Home() {
     const iv = setInterval(() => fetchTasks(true), 5000);
     return () => clearInterval(iv);
   }, [fetchTasks]);
+
+  // Close move dialog on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (moveDialogRef.current && !moveDialogRef.current.contains(e.target as Node)) {
+        setMovingTaskId(null);
+      }
+    };
+    if (movingTaskId) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [movingTaskId]);
 
   const handleAdd = async () => {
     if (!newTask.trim()) return;
@@ -97,6 +111,23 @@ export default function Home() {
       const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
       if (res.ok) await fetchTasks(true);
     } catch { /* silent */ }
+  };
+
+  const handleMoveTask = async (taskId: string, newDate: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: newDate }),
+      });
+      if (res.ok) {
+        setMovingTaskId(null);
+        await fetchTasks(true);
+        toast({ title: 'تم النقل', description: `تم نقل المهمة إلى ${formatDateAr(newDate)}` });
+      }
+    } catch {
+      toast({ title: 'خطأ', description: 'فشل في نقل المهمة', variant: 'destructive' });
+    }
   };
 
   const dayTasks = tasks.filter((t) => t.date === selStr);
@@ -144,11 +175,34 @@ export default function Home() {
   });
   const monthDone = monthTasks.filter((t) => t.done).length;
 
+  // بناء خلايا تقويم النقل
+  const mYr = moveCalMonth.getFullYear();
+  const mMo = moveCalMonth.getMonth();
+  const mFirstDow = new Date(mYr, mMo, 1).getDay();
+  const mDim = new Date(mYr, mMo + 1, 0).getDate();
+  const mPrevDim = new Date(mYr, mMo, 0).getDate();
+
+  const moveCells: { d: number; ds: string; cur: boolean }[] = [];
+  for (let i = mFirstDow - 1; i >= 0; i--) {
+    const pm = mMo === 0 ? 11 : mMo - 1;
+    const py = mMo === 0 ? mYr - 1 : mYr;
+    moveCells.push({ d: mPrevDim - i, ds: toDS(new Date(py, pm, mPrevDim - i)), cur: false });
+  }
+  for (let d = 1; d <= mDim; d++) {
+    moveCells.push({ d, ds: toDS(new Date(mYr, mMo, d)), cur: true });
+  }
+  const mRem = 42 - moveCells.length;
+  for (let d = 1; d <= mRem; d++) {
+    const nm = mMo === 11 ? 0 : mMo + 1;
+    const ny = mMo === 11 ? mYr + 1 : mYr;
+    moveCells.push({ d, ds: toDS(new Date(ny, nm, d)), cur: false });
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-violet-950 no-print">
       <div className="max-w-md mx-auto space-y-5 p-4 pb-12">
 
-        {/* ═══════ الهيدر - تصميم بارز ═══════ */}
+        {/* ═══════ الهيدر ═══════ */}
         <div className="pt-8 pb-3">
           <div className="flex items-center justify-between">
             <div>
@@ -156,9 +210,7 @@ export default function Home() {
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
                   <Flame className="w-5 h-5 text-white" />
                 </div>
-                <h1 className="text-4xl font-black text-white tracking-tight">
-                  مهامي
-                </h1>
+                <h1 className="text-4xl font-black text-white tracking-tight">مهامي</h1>
               </div>
               <p className="text-sm text-slate-400 mt-2 mr-13">
                 {selStr === todayStr
@@ -179,9 +231,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ═══════ التقويم - تصميم بارز ═══════ */}
+        {/* ═══════ التقويم ═══════ */}
         <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-3xl border border-violet-500/20 p-5 shadow-2xl shadow-violet-900/20">
-          {/* رأس التقويم */}
           <div className="flex items-center justify-between mb-5">
             <button
               onClick={() => setCalMonth((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))}
@@ -201,7 +252,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* إحصائيات سريعة - بارزة */}
           <div className="flex items-center gap-4 mb-5 px-1">
             <div className="flex items-center gap-2 bg-violet-500/10 px-3 py-1.5 rounded-full border border-violet-500/20">
               <span className="w-2.5 h-2.5 rounded-full bg-violet-400 shadow-md shadow-violet-400/50" />
@@ -213,14 +263,12 @@ export default function Home() {
             </div>
           </div>
 
-          {/* أسماء الأيام */}
           <div className="grid grid-cols-7 mb-2">
             {WEEKDAYS.map((w) => (
               <div key={w} className="text-center text-xs text-violet-400 font-bold py-2">{w}</div>
             ))}
           </div>
 
-          {/* أيام الشهر - بارزة */}
           <div className="grid grid-cols-7 gap-y-1.5">
             {cells.map((c, i) => {
               const sel = isSel(c.ds);
@@ -261,7 +309,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ═══════ إضافة مهمة - تصميم بارز ═══════ */}
+        {/* ═══════ إضافة مهمة ═══════ */}
         <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-3xl border border-violet-500/20 p-5 shadow-xl shadow-violet-900/10">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -311,7 +359,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ═══════ قائمة المهام - تصميم بارز ═══════ */}
+        {/* ═══════ قائمة المهام ═══════ */}
         <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-3xl border border-violet-500/20 p-5 shadow-xl shadow-violet-900/10">
           {loading && dayTasks.length === 0 ? (
             <div className="flex items-center justify-center py-14">
@@ -329,57 +377,149 @@ export default function Home() {
             <ScrollArea className="max-h-[50vh]">
               <div className="space-y-3">
                 {dayTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className={`
-                      group flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                      ${task.done
-                        ? 'bg-slate-700/20 border border-slate-700/20'
-                        : 'bg-gradient-to-r from-slate-700/50 to-slate-700/30 border border-violet-500/20 hover:border-violet-500/40 hover:shadow-md hover:shadow-violet-500/10'
-                      }
-                    `}
-                  >
-                    {/* خانة التحديد */}
-                    <button
-                      onClick={() => handleToggle(task)}
+                  <div key={task.id} className="relative">
+                    <div
                       className={`
-                        shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all duration-200
+                        group flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
                         ${task.done
-                          ? 'bg-gradient-to-br from-emerald-500 to-green-400 border-emerald-500 shadow-md shadow-emerald-500/30'
-                          : 'border-slate-500 hover:border-violet-400 hover:bg-violet-500/15'
+                          ? 'bg-slate-700/20 border border-slate-700/20'
+                          : 'bg-gradient-to-r from-slate-700/50 to-slate-700/30 border border-violet-500/20 hover:border-violet-500/40 hover:shadow-md hover:shadow-violet-500/10'
                         }
                       `}
                     >
-                      {task.done && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
-                    </button>
+                      {/* خانة التحديد */}
+                      <button
+                        onClick={() => handleToggle(task)}
+                        className={`
+                          shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all duration-200
+                          ${task.done
+                            ? 'bg-gradient-to-br from-emerald-500 to-green-400 border-emerald-500 shadow-md shadow-emerald-500/30'
+                            : 'border-slate-500 hover:border-violet-400 hover:bg-violet-500/15'
+                          }
+                        `}
+                      >
+                        {task.done && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
+                      </button>
 
-                    {/* النص */}
-                    <span
-                      className={`
-                        flex-1 text-right text-base transition-all duration-200
-                        ${task.done
-                          ? 'line-through text-slate-500'
-                          : 'text-white font-bold'
-                        }
-                      `}
-                    >
-                      {task.text}
-                    </span>
+                      {/* النص */}
+                      <span
+                        className={`
+                          flex-1 text-right text-base transition-all duration-200
+                          ${task.done
+                            ? 'line-through text-slate-500'
+                            : 'text-white font-bold'
+                          }
+                        `}
+                      >
+                        {task.text}
+                      </span>
 
-                    {/* زر الحذف */}
-                    <button
-                      onClick={() => handleDelete(task.id)}
-                      className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 hover:bg-red-500/15 transition-all duration-200"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      {/* زر النقل ليوم آخر */}
+                      <button
+                        onClick={() => {
+                          setMovingTaskId(movingTaskId === task.id ? null : task.id);
+                          setMoveCalMonth(new Date());
+                        }}
+                        className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-500 hover:text-amber-400 hover:bg-amber-500/15 transition-all duration-200"
+                        title="نقل ليوم آخر"
+                      >
+                        <ArrowLeftRight className="w-4 h-4" />
+                      </button>
+
+                      {/* زر الحذف */}
+                      <button
+                        onClick={() => handleDelete(task.id)}
+                        className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 hover:bg-red-500/15 transition-all duration-200"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* ═══ نافذة نقل المهمة ═══ */}
+                    {movingTaskId === task.id && (
+                      <div
+                        ref={moveDialogRef}
+                        className="mt-2 bg-slate-800 border border-amber-500/30 rounded-2xl p-4 shadow-xl shadow-amber-900/20"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-bold text-amber-400">نقل إلى يوم آخر</span>
+                          <button
+                            onClick={() => setMovingTaskId(null)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-slate-700 transition-all"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* رأس تقويم النقل */}
+                        <div className="flex items-center justify-between mb-3">
+                          <button
+                            onClick={() => setMoveCalMonth((p) => new Date(p.getFullYear(), p.getMonth() + 1, 1))}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-violet-600/30 transition-all border border-slate-700/50"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                          <div className="text-center">
+                            <span className="text-sm font-bold text-white">{MONTHS[mMo]}</span>
+                            <span className="text-sm text-slate-400 mr-1">{mYr}</span>
+                          </div>
+                          <button
+                            onClick={() => setMoveCalMonth((p) => new Date(p.getFullYear(), p.getMonth() - 1, 1))}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-violet-600/30 transition-all border border-slate-700/50"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* أسماء الأيام */}
+                        <div className="grid grid-cols-7 mb-1">
+                          {WEEKDAYS.map((w) => (
+                            <div key={w} className="text-center text-[10px] text-slate-500 font-bold py-1">{w}</div>
+                          ))}
+                        </div>
+
+                        {/* أيام الشهر */}
+                        <div className="grid grid-cols-7 gap-y-0.5">
+                          {moveCells.map((c, i) => {
+                            const isCurrentTask = c.ds === task.date;
+                            const isMoveToday = c.ds === todayStr;
+
+                            return (
+                              <button
+                                key={i}
+                                onClick={() => {
+                                  if (c.ds !== task.date) handleMoveTask(task.id, c.ds);
+                                }}
+                                disabled={c.ds === task.date}
+                                className={`
+                                  relative flex items-center justify-center h-8 rounded-xl text-xs font-bold transition-all duration-150
+                                  ${!c.cur ? 'text-slate-600' : 'text-slate-300'}
+                                  ${isCurrentTask ? 'bg-violet-600/30 text-violet-300 ring-1 ring-violet-500/50 cursor-not-allowed' : ''}
+                                  ${isMoveToday && !isCurrentTask ? 'ring-1 ring-amber-500/50 text-amber-300' : ''}
+                                  ${c.cur && !isCurrentTask ? 'hover:bg-amber-500/20 hover:text-white' : ''}
+                                `}
+                              >
+                                {c.d}
+                                {isCurrentTask && (
+                                  <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-violet-400" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <p className="text-[10px] text-slate-500 mt-2 text-center">
+                          اختر اليوم الجديد لنقل المهمة إليه
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </ScrollArea>
           )}
 
-          {/* شريط التقدم - بارز */}
+          {/* شريط التقدم */}
           {dayTasks.length > 0 && (
             <div className="mt-5 pt-5 border-t border-slate-700/30">
               <div className="flex items-center justify-between mb-3">
