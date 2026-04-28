@@ -277,7 +277,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                <div className="w-10 h-10 rounded-2xl bg-violet-600 flex items-center justify-center">
                   <Flame className="w-5 h-5 text-white" />
                 </div>
                 <h1 className="text-4xl font-black text-white tracking-tight">مهامي</h1>
@@ -302,7 +302,7 @@ export default function Home() {
         </div>
 
         {/* ═══════ التقويم ═══════ */}
-        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-3xl border border-violet-500/20 p-5 shadow-2xl shadow-violet-900/20">
+        <div className="bg-slate-800/90 rounded-3xl border border-violet-500/20 p-5">
           <div className="flex items-center justify-between mb-5">
             <button
               onClick={() => setCalMonth(p => new Date(p.getFullYear(), p.getMonth() + 1, 1))}
@@ -324,11 +324,11 @@ export default function Home() {
 
           <div className="flex items-center gap-4 mb-5 px-1">
             <div className="flex items-center gap-2 bg-violet-500/10 px-3 py-1.5 rounded-full border border-violet-500/20">
-              <span className="w-2.5 h-2.5 rounded-full bg-violet-400 shadow-md shadow-violet-400/50" />
+              <span className="w-2.5 h-2.5 rounded-full bg-violet-400" />
               <span className="text-xs text-violet-300 font-bold">{monthTasks.length - monthDone} قيد التنفيذ</span>
             </div>
             <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-md shadow-emerald-400/50" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
               <span className="text-xs text-emerald-300 font-bold">{monthDone} مُنجزة</span>
             </div>
           </div>
@@ -339,7 +339,7 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-y-1.5">
+          <div className="grid grid-cols-7 gap-y-1">
             {cells.map((c, i) => {
               const sel = c.ds === selStr;
               const tod = c.ds === todayStr;
@@ -353,23 +353,24 @@ export default function Home() {
                     if (!c.cur) setCalMonth(new Date(c.ds + 'T00:00:00'));
                   }}
                   className={`
-                    relative flex flex-col items-center justify-center h-12 rounded-2xl text-sm font-bold transition-colors
+                    relative flex items-center justify-center h-11 rounded-xl text-sm font-bold
                     ${!c.cur ? 'text-slate-600' : 'text-slate-300'}
-                    ${sel ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-600/40 scale-110 ring-2 ring-violet-400/50' : ''}
-                    ${tod && !sel ? 'bg-slate-700 text-white ring-2 ring-fuchsia-500/50 shadow-md shadow-fuchsia-500/20' : ''}
-                    ${!sel && !tod && c.cur ? 'hover:bg-violet-600/20 hover:text-white' : ''}
+                    ${sel ? 'bg-violet-600 text-white font-black' : ''}
+                    ${tod && !sel ? 'bg-slate-700/80 text-white font-black' : ''}
+                    ${!sel && !tod && c.cur ? 'hover:bg-slate-700/40' : ''}
                   `}
+                  style={sel ? { boxShadow: '0 0 0 2px rgba(167,139,250,0.5)' } : tod && !sel ? { boxShadow: '0 0 0 2px rgba(217,70,239,0.4)' } : undefined}
                 >
                   {c.d}
                   {status?.hasTasks && !sel && (
-                    <span className={`absolute bottom-1 w-2 h-2 rounded-full ${
-                      status.allDone ? 'bg-emerald-400 shadow-md shadow-emerald-400/60'
-                        : status.hasPending ? 'bg-violet-400 shadow-md shadow-violet-400/60'
+                    <span className={`absolute bottom-0.5 w-1.5 h-1.5 rounded-full ${
+                      status.allDone ? 'bg-emerald-400'
+                        : status.hasPending ? 'bg-violet-400'
                         : 'bg-slate-500'
                     }`} />
                   )}
                   {status?.hasTasks && sel && (
-                    <span className="absolute bottom-1 w-2 h-2 rounded-full bg-white/90 shadow-md shadow-white/30" />
+                    <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-white/80" />
                   )}
                 </button>
               );
@@ -378,7 +379,7 @@ export default function Home() {
         </div>
 
         {/* ═══════ إضافة مهمة ═══════ */}
-        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-3xl border border-violet-500/20 p-5 shadow-xl shadow-violet-900/10">
+        <div className="bg-slate-800/90 rounded-3xl border border-violet-500/20 p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center">
@@ -388,7 +389,7 @@ export default function Home() {
                 {selStr === todayStr ? 'مهام اليوم' : formatDateAr(selStr)}
               </span>
               {dayTasks.length > 0 && (
-                <span className="text-xs bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white px-3 py-1 rounded-full font-black shadow-md shadow-violet-500/30">
+                <span className="text-xs bg-violet-600 text-white px-3 py-1 rounded-full font-black">
                   {dayTasks.length}
                 </span>
               )}
@@ -415,7 +416,7 @@ export default function Home() {
             <Button
               onClick={handleAdd}
               disabled={!newTask.trim()}
-              className="h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 shrink-0 p-0 shadow-xl shadow-violet-600/40 transition-colors"
+              className="h-14 w-14 rounded-2xl bg-violet-600 hover:bg-violet-500 shrink-0 p-0 transition-colors"
             >
               <Plus className="w-6 h-6 text-white" strokeWidth={3} />
             </Button>
@@ -423,7 +424,7 @@ export default function Home() {
         </div>
 
         {/* ═══════ قائمة المهام ═══════ */}
-        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-3xl border border-violet-500/20 p-5 shadow-xl shadow-violet-900/10">
+        <div className="bg-slate-800/90 rounded-3xl border border-violet-500/20 p-5">
           {loading && dayTasks.length === 0 ? (
             <div className="flex items-center justify-center py-14">
               <span className="w-8 h-8 border-3 border-slate-600 border-t-violet-400 rounded-full animate-spin" />
@@ -455,7 +456,7 @@ export default function Home() {
                         className={`
                           shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-colors
                           ${task.done
-                            ? 'bg-gradient-to-br from-emerald-500 to-green-400 border-emerald-500 shadow-md shadow-emerald-500/30'
+                            ? 'bg-emerald-500 border-emerald-500'
                             : 'border-slate-500 hover:border-violet-400 hover:bg-violet-500/15'
                           }
                         `}
@@ -490,7 +491,7 @@ export default function Home() {
                     {movingTaskId === task.id && (
                       <div
                         ref={moveDialogRef}
-                        className="mt-2 bg-slate-800 border border-amber-500/30 rounded-2xl p-4 shadow-xl shadow-amber-900/20"
+                        className="mt-2 bg-slate-800 border border-amber-500/30 rounded-2xl p-4"
                       >
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-sm font-bold text-amber-400">نقل إلى يوم آخر</span>
