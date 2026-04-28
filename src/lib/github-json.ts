@@ -1,5 +1,5 @@
 // مكتبة للتعامل مع ملف JSON على GitHub
-// البيانات تنحفظ في مستودع GitHub ويتشاركها الكل من أي مكان بالعالم
+// مع تخزين مؤقت بالذاكرة لتسريع الأداء بشكل كبير
 
 // التوكن مقسم عشان يتجاوز حماية GitHub
 const _p1 = 'github_pat_11A6IKJNA0';
@@ -18,7 +18,7 @@ interface Task {
   id: string;
   text: string;
   done: boolean;
-  date: string; // تاريخ المهمة بصيغة YYYY-MM-DD
+  date: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,8 +29,31 @@ interface GitHubContentResponse {
   encoding: string;
 }
 
-// قراءة ملف JSON من GitHub
-async function readFileFromGitHub(): Promise<{ data: Task[]; sha: string }> {
+// ═══════════════════════════════════════════
+// تخزين مؤقت بالذاكرة — يمنع ضرب GitHub API على كل طلب
+// ═══════════════════════════════════════════
+let cache: { data: Task[]; sha: string; timestamp: number } | null = null;
+const CACHE_TTL = 10_000; // 10 ثواني — أقصر مدة للكاش
+
+function isCacheValid(): boolean {
+  return cache !== null && (Date.now() - cache.timestamp) < CACHE_TTL;
+}
+
+function setCache(data: Task[], sha: string): void {
+  cache = { data, sha, timestamp: Date.now() };
+}
+
+function invalidateCache(): void {
+  cache = null;
+}
+
+// قراءة ملف JSON من GitHub (مع كاش)
+async function readFileFromGitHub(forceRefresh = false): Promise<{ data: Task[]; sha: string }> {
+  // نرجع من الكاش إذا صالح
+  if (!forceRefresh && isCacheValid()) {
+    return { data: [...cache!.data], sha: cache!.sha };
+  }
+
   const url = `${GITHUB_API}/repos/${GITHUB_REPO}/contents/${GITHUB_DATA_PATH}?ref=${GITHUB_BRANCH}`;
 
   const res = await fetch(url, {
@@ -42,11 +65,16 @@ async function readFileFromGitHub(): Promise<{ data: Task[]; sha: string }> {
   });
 
   if (res.status === 404) {
-    // الملف ما موجود بعد — نرجع بيانات فاضية
-    return { data: [], sha: '' };
+    const empty: Task[] = [];
+    setCache(empty, '');
+    return { data: empty, sha: '' };
   }
 
   if (!res.ok) {
+    // إذا فشل الطلب لكن عندنا كاش قديم، نرجعه
+    if (cache) {
+      return { data: [...cache.data], sha: cache.sha };
+    }
     throw new Error(`GitHub API error: ${res.status} ${res.statusText}`);
   }
 
@@ -54,11 +82,12 @@ async function readFileFromGitHub(): Promise<{ data: Task[]; sha: string }> {
   const content = Buffer.from(json.content, 'base64').toString('utf-8');
   const data: Task[] = JSON.parse(content);
 
-  return { data, sha: json.sha };
+  setCache(data, json.sha);
+  return { data: [...data], sha: json.sha };
 }
 
-// كتابة ملف JSON إلى GitHub
-async function writeFileToGitHub(data: Task[], sha: string): Promise<void> {
+// كتابة ملف JSON إلى GitHub + تحديث الكاش فوراً
+async function writeFileToGitHub(data: Task[], sha: string): Promise<string> {
   const url = `${GITHUB_API}/repos/${GITHUB_REPO}/contents/${GITHUB_DATA_PATH}`;
   const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
 
@@ -83,9 +112,20 @@ async function writeFileToGitHub(data: Task[], sha: string): Promise<void> {
   });
 
   if (!res.ok) {
+    // إذا فشلت الكتابة، نبطل الكاش عشان نضمن الاتساق
+    invalidateCache();
     const errorText = await res.text();
     throw new Error(`GitHub API write error: ${res.status} ${errorText}`);
   }
+
+  // نحصل على الـ SHA الجديد من الرد
+  const response = await res.json();
+  const newSha: string = response.content?.sha || '';
+
+  // نحدث الكاش فوراً بعد الكتابة الناجحة
+  setCache(data, newSha);
+
+  return newSha;
 }
 
 // ===== العمليات الأساسية =====
